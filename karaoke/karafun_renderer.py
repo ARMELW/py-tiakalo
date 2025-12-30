@@ -30,8 +30,12 @@ class KarafunRenderer:
         if bg_image and Path(bg_image).exists():
             try:
                 self.bg_image = Image.open(bg_image).convert('RGBA')
-                # Resize to match video dimensions
-                self.bg_image = self.bg_image.resize((width, height), Image.Resampling.LANCZOS)
+                # Resize to match video dimensions (use LANCZOS for quality, fallback to BICUBIC)
+                try:
+                    resample_method = Image.Resampling.LANCZOS
+                except AttributeError:
+                    resample_method = Image.LANCZOS
+                self.bg_image = self.bg_image.resize((width, height), resample_method)
             except Exception as e:
                 print(f"Warning: Could not load background image: {e}")
                 self.bg_image = None
@@ -265,8 +269,12 @@ class KarafunRenderer:
         site_name = "tiakalo.org"
         font_size = 32
         try:
-            header_font = ImageFont.truetype(text_layout.font.path, font_size)
-        except:
+            font_path = getattr(text_layout.font, 'path', None)
+            if font_path:
+                header_font = ImageFont.truetype(font_path, font_size)
+            else:
+                header_font = text_layout.font
+        except Exception:
             header_font = text_layout.font
         
         draw.text((30, 25), site_name, font=header_font, fill=(255, 255, 255, 255))
@@ -300,9 +308,14 @@ class KarafunRenderer:
         artist_size = int(text_layout.font_size * 1.2)
         
         try:
-            title_font = ImageFont.truetype(text_layout.font.path, title_size)
-            artist_font = ImageFont.truetype(text_layout.font.path, artist_size)
-        except:
+            font_path = getattr(text_layout.font, 'path', None)
+            if font_path:
+                title_font = ImageFont.truetype(font_path, title_size)
+                artist_font = ImageFont.truetype(font_path, artist_size)
+            else:
+                title_font = text_layout.font
+                artist_font = text_layout.font
+        except Exception:
             title_font = text_layout.font
             artist_font = text_layout.font
         
@@ -413,8 +426,13 @@ class KarafunRenderer:
         # Create font for time display
         time_font_size = 24
         try:
-            time_font = ImageFont.truetype(text_layout.font.path, time_font_size)
-        except:
+            # Try to get font path, with fallback for fonts without path attribute
+            font_path = getattr(text_layout.font, 'path', None)
+            if font_path:
+                time_font = ImageFont.truetype(font_path, time_font_size)
+            else:
+                time_font = text_layout.font
+        except Exception:
             time_font = text_layout.font
         
         # Measure text

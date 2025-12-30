@@ -366,11 +366,16 @@ def generate_karafun_video(
         # Determine if we should show title screen
         show_title = time_offset > 0 and current_time < time_offset
         
+        # Calculate the time to use for rendering:
+        # - For title screen: use current_time (includes title screen offset)
+        # - For lyrics: use lyrics_time (adjusted to start at 0 after title)
+        render_time = current_time if show_title else lyrics_time
+        
         # Render frame
         frame = renderer.render_frame(
             lines_data=lines_data,
             text_layout=text_layout,
-            current_time=current_time if show_title else lyrics_time,
+            current_time=render_time,
             show_header=show_header and not show_title,
             show_title=show_title,
             song_title=song_title,

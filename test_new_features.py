@@ -32,8 +32,11 @@ def test_background_image():
     print(f"✓ Generated video without background: {output_path}")
     
     # Cleanup
-    if os.path.exists(output_path):
-        os.remove(output_path)
+    try:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+    except OSError as e:
+        print(f"Warning: Could not remove {output_path}: {e}")
 
 
 def test_time_display():
@@ -63,8 +66,11 @@ def test_time_display():
     print(f"✓ Generated video with time display: {output_path}")
     
     # Cleanup
-    if os.path.exists(output_path):
-        os.remove(output_path)
+    try:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+    except OSError as e:
+        print(f"Warning: Could not remove {output_path}: {e}")
 
 
 def test_typewriter_animation():
@@ -95,8 +101,11 @@ def test_typewriter_animation():
     print(f"✓ Generated video with typewriter animation: {output_path}")
     
     # Cleanup
-    if os.path.exists(output_path):
-        os.remove(output_path)
+    try:
+        if os.path.exists(output_path):
+            os.remove(output_path)
+    except OSError as e:
+        print(f"Warning: Could not remove {output_path}: {e}")
 
 
 def test_cli_config():

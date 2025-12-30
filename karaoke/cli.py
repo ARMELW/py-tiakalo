@@ -143,11 +143,18 @@ Examples:
         display_config = config.get('display', {})
         show_time = display_config.get('show_time', True)
         
+        # Audio settings
+        audio_config = config.get('audio', {})
+        audio_path = audio_config.get('path', None)
+        audio_offset = audio_config.get('offset', 0.0)
+        
         print("Generating karaoke video...")
         print(f"  Output: {output_path}")
         print(f"  Resolution: {width}x{height}")
         print(f"  FPS: {fps}")
         print(f"  Lines: {len(lyrics_data)}")
+        if audio_path:
+            print(f"  Audio: {audio_path} (offset: {audio_offset}s)")
         
         # Generate video
         result_path = generate_karafun_video(
@@ -166,7 +173,9 @@ Examples:
             artist_name=artist_name,
             bg_image=bg_image,
             show_time=show_time,
-            typewriter_speed=typewriter_speed
+            typewriter_speed=typewriter_speed,
+            audio_path=audio_path,
+            audio_offset=audio_offset
         )
         
         print(f"\n✓ Video generated successfully: {result_path}")

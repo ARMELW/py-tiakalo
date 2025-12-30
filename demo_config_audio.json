@@ -1,0 +1,64 @@
+{
+  "output_path": "final_demo.mp4",
+  "video": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30
+  },
+  "background": {
+    "color": [
+      10,
+      10,
+      30
+    ],
+    "image": "bg.jpg"
+  },
+  "font": {
+    "family": "./Shantell.ttf",
+    "size": 52,
+    "style": "bold"
+  },
+  "title": {
+    "song": "Comprehensive Demo",
+    "artist": "tiakalo.org",
+    "duration": 3.0
+  },
+  "animation": {
+    "show_header": true,
+    "typewriter_speed": 0.05
+  },
+  "display": {
+    "show_time": true
+  },
+  "audio": {
+    "path": "test_audio.mp3",
+    "offset": 0.0
+  },
+  "lyrics": [
+    {
+      "text": "Transparent header with no black bar",
+      "start_time": 0,
+      "end_time": 3
+    },
+    {
+      "text": "Dark overlay improves text visibility",
+      "start_time": 3,
+      "end_time": 6
+    },
+    {
+      "text": "Time display during singing",
+      "start_time": 6,
+      "end_time": 8.5
+    },
+    {
+      "text": "Remaining time shown during pause",
+      "start_time": 11,
+      "end_time": 14
+    },
+    {
+      "text": "Audio synchronized with lyrics",
+      "start_time": 14,
+      "end_time": 17
+    }
+  ]
+}

@@ -2,6 +2,105 @@
 Utility functions for karaoke effect.
 """
 
+import subprocess
+import os
+import shutil
+
+
+# Constants
+DEFAULT_OVERLAY_OPACITY = 128  # 50% opacity (0-255 scale)
+MIN_TITLE_THRESHOLD = 2.0  # Minimum seconds needed to show title
+
+
+def check_ffmpeg_available():
+    """
+    Check if ffmpeg is available in the system PATH.
+    
+    Returns:
+        bool: True if ffmpeg is available, False otherwise
+    """
+    return shutil.which('ffmpeg') is not None
+
+
+def add_audio_to_video(video_path, audio_path, output_path, audio_offset=0.0):
+    """
+    Add audio track to video using ffmpeg.
+    
+    Args:
+        video_path: Path to input video file (without audio)
+        audio_path: Path to audio file to add
+        output_path: Path to output video file (with audio)
+        audio_offset: Offset in seconds to delay/advance audio (positive = delay, negative = advance)
+    
+    Returns:
+        Path to output video file
+        
+    Raises:
+        RuntimeError: If ffmpeg command fails or ffmpeg is not available
+        FileNotFoundError: If input files don't exist
+        ValueError: If audio_offset is not a valid number
+    """
+    # Check if ffmpeg is available
+    if not check_ffmpeg_available():
+        raise RuntimeError(
+            "ffmpeg is not available in the system PATH. "
+            "Please install ffmpeg: https://ffmpeg.org/download.html"
+        )
+    
+    if not os.path.exists(video_path):
+        raise FileNotFoundError(f"Video file not found: {video_path}")
+    if not os.path.exists(audio_path):
+        raise FileNotFoundError(f"Audio file not found: {audio_path}")
+    
+    # Validate audio_offset to prevent command injection
+    try:
+        audio_offset = float(audio_offset)
+        # Additional validation: ensure reasonable range
+        if not (-3600 <= audio_offset <= 3600):  # Max 1 hour offset
+            raise ValueError("Audio offset must be between -3600 and 3600 seconds")
+    except (ValueError, TypeError) as e:
+        raise ValueError(f"Invalid audio_offset: must be a number, got {audio_offset}")
+    
+    # Build ffmpeg command
+    # -y: overwrite output file
+    # -i: input files
+    # -itsoffset: offset audio (must come BEFORE the audio input it affects)
+    # -c:v copy: copy video codec without re-encoding
+    # -c:a aac: encode audio as AAC
+    # -shortest: finish when shortest stream ends
+    cmd = [
+        'ffmpeg',
+        '-y',  # Overwrite output
+        '-i', video_path,  # Video input
+    ]
+    
+    # Add audio offset if specified - MUST come before audio input
+    # Format as string with limited precision to prevent injection
+    if audio_offset != 0:
+        offset_str = f"{audio_offset:.3f}"  # Limit to 3 decimal places
+        cmd.extend(['-itsoffset', offset_str, '-i', audio_path])
+    else:
+        cmd.extend(['-i', audio_path])
+    
+    cmd.extend([
+        '-c:v', 'copy',  # Copy video stream
+        '-c:a', 'aac',  # Encode audio as AAC
+        '-shortest',  # End when shortest stream ends
+        output_path
+    ])
+    
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return output_path
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"ffmpeg failed: {e.stderr}")
+
+
 def map_in_range(value, in_min, in_max, out_min, out_max, constrain=False):
     """
     Map a value from one range to another.

@@ -76,6 +76,10 @@ class KarafunRenderer:
         # Create PIL image with background
         if self.bg_image:
             img = self.bg_image.copy()
+            # Add dark overlay to improve text visibility on bright backgrounds
+            from .utils import DEFAULT_OVERLAY_OPACITY
+            overlay = Image.new('RGBA', (self.width, self.height), (0, 0, 0, DEFAULT_OVERLAY_OPACITY))
+            img = Image.alpha_composite(img, overlay)
         else:
             img = Image.new('RGBA', (self.width, self.height), self.bg_color)
         
@@ -260,10 +264,8 @@ class KarafunRenderer:
         """
         draw = ImageDraw.Draw(img)
         
-        # Header background with transparency
+        # Header background - fully transparent (no black bar)
         header_height = 80
-        header_rect = Image.new('RGBA', (self.width, header_height), (0, 0, 0, 51))  # 20% opacity
-        img.paste(header_rect, (0, 0), header_rect)
         
         # Draw decorative top line
         draw.line([(0, 0), (self.width, 0)], fill=(237, 61, 234, 255), width=2)

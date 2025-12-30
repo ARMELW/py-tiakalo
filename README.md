@@ -31,12 +31,26 @@ This project implements a karaoke word fill effect in Python, porting the functi
 - ✅ **NEW: Typewriter animation** for title screen with progressive underline
 - ✅ **NEW: Time remaining display** (shows remaining time during playback)
 - ✅ **NEW: Background image support** (use custom images as backgrounds)
+- ✅ **NEW: Dark overlay** on background images to improve text visibility
 - ✅ **NEW: CLI with JSON config** (generate videos from configuration files)
+- ✅ **NEW: Audio support** (add audio tracks to karaoke videos with offset control)
 
 ## 🚀 Installation
 
 ```bash
 pip install -r requirements.txt
+```
+
+**Note:** Audio support requires `ffmpeg` to be installed on your system:
+```bash
+# Ubuntu/Debian
+sudo apt-get install ffmpeg
+
+# macOS
+brew install ffmpeg
+
+# Windows
+# Download from https://ffmpeg.org/download.html
 ```
 
 ### Requirements
@@ -83,9 +97,27 @@ generate_karafun_video(
     title_duration=3.0,
     song_title='My Karaoke Song',
     artist_name='Artist Name',
-    typewriter_speed=0.05  # Typewriter animation speed
+    typewriter_speed=0.05,  # Typewriter animation speed
+    audio_path='song.mp3',  # Optional: Add audio track
+    audio_offset=0.0  # Optional: Audio offset in seconds
 )
 ```
+
+### Adding Audio (NEW)
+
+You can add audio tracks to your karaoke videos:
+
+```python
+generate_karafun_video(
+    lyrics_data=lyrics_data,
+    output_path='karaoke_with_audio.mp4',
+    audio_path='background_music.mp3',  # Path to audio file
+    audio_offset=0.5,  # Delay audio by 0.5 seconds
+    # ... other parameters
+)
+```
+
+**Supported audio formats:** MP3, WAV, AAC, OGG, FLAC (any format supported by ffmpeg)
 
 ### CLI Configuration (NEW)
 
@@ -128,6 +160,10 @@ python -m karaoke.cli --config config.json --output my_video.mp4
   },
   "display": {
     "show_time": true
+  },
+  "audio": {
+    "path": "song.mp3",
+    "offset": 0.0
   },
   "lyrics": [
     {"text": "First line", "start_time": 0, "end_time": 3},
@@ -248,7 +284,8 @@ Generate a professional Karafun-style karaoke video with two-line display.
 - Optional title screen with song info
 - **NEW:** Typewriter animation for title
 - **NEW:** Time remaining display
-- **NEW:** Background image support
+- **NEW:** Background image support with dark overlay
+- **NEW:** Audio track support
 
 **Parameters:**
 - `lyrics_data` (list): List of dictionaries with 'text', 'start_time', 'end_time'
@@ -267,6 +304,8 @@ Generate a professional Karafun-style karaoke video with two-line display.
 - `song_title` (str): Song title for title screen (optional)
 - `artist_name` (str): Artist name for title screen (optional)
 - `typewriter_speed` (float): Speed of typewriter animation in seconds per character (default: 0.05, **NEW**)
+- `audio_path` (str): Path to audio file to add to video (optional, **NEW**)
+- `audio_offset` (float): Audio offset in seconds - positive delays audio, negative advances it (default: 0.0, **NEW**)
 
 **Returns:** Path to the generated video file
 

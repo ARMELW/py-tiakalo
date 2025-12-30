@@ -34,7 +34,8 @@ class KarafunRenderer:
                 try:
                     resample_method = Image.Resampling.LANCZOS
                 except AttributeError:
-                    resample_method = Image.LANCZOS
+                    # Fallback for older Pillow versions
+                    resample_method = Image.BICUBIC
                 self.bg_image = self.bg_image.resize((width, height), resample_method)
             except Exception as e:
                 print(f"Warning: Could not load background image: {e}")
@@ -406,7 +407,7 @@ class KarafunRenderer:
         remaining_seconds = max(0, video_duration - current_time)
         
         # Check if we're in waiting state (before first line or between lines)
-        # Optimize by using any() which short-circuits on first match
+        # Note: any() evaluates until first True is found, optimizing most common case
         in_waiting = True
         if lines_data:
             in_waiting = not any(line['start_time'] <= current_time <= line['end_time'] for line in lines_data)

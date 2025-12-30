@@ -107,7 +107,19 @@ Examples:
         
         # Background settings
         background_config = config.get('background', {})
-        bg_color = tuple(background_config.get('color', [0, 0, 0]))
+        bg_color_raw = background_config.get('color', [0, 0, 0])
+        
+        # Validate and convert bg_color
+        if not isinstance(bg_color_raw, (list, tuple)) or len(bg_color_raw) != 3:
+            raise ValueError("Background color must be an array of 3 RGB values (e.g., [255, 0, 0])")
+        
+        try:
+            bg_color = tuple(int(c) for c in bg_color_raw)
+            if not all(0 <= c <= 255 for c in bg_color):
+                raise ValueError("RGB values must be between 0 and 255")
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Invalid background color format: {e}")
+        
         bg_image = background_config.get('image', None)
         
         # Font settings

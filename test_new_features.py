@@ -4,6 +4,7 @@ Test script for new Karafun features: CLI, background image, time display, typew
 
 from karaoke import generate_karafun_video
 import os
+import json
 
 
 def test_background_image():
@@ -118,7 +119,6 @@ def test_cli_config():
         print(f"✓ Found config file: {config_file}")
         
         # Try to load it
-        import json
         with open(config_file, 'r') as f:
             config = json.load(f)
         

@@ -409,11 +409,15 @@ def generate_karafun_video(
     if audio_path:
         from .utils import add_audio_to_video
         import os
+        import tempfile
         from pathlib import Path
         
-        # Create temporary path for video without audio using proper path manipulation
+        # Create unique temporary path for video without audio
         output_file = Path(output_path)
-        temp_video = output_file.with_stem(f"{output_file.stem}_temp")
+        with tempfile.NamedTemporaryFile(suffix=output_file.suffix, delete=False, dir=output_file.parent) as tmp:
+            temp_video = tmp.name
+        
+        # Rename current video to temp
         os.rename(output_path, temp_video)
         
         try:

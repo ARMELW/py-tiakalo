@@ -19,6 +19,8 @@ def extract_frame(video_path, time_seconds, output_path):
     cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
     ret, frame = cap.read()
     
+    cap.release()
+    
     if ret:
         cv2.imwrite(output_path, frame)
         print(f"✓ Extracted frame: {output_path}")
@@ -26,8 +28,6 @@ def extract_frame(video_path, time_seconds, output_path):
     else:
         print(f"Failed to extract frame from {video_path}")
         return False
-    
-    cap.release()
 
 
 if __name__ == '__main__':

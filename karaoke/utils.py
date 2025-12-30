@@ -55,7 +55,10 @@ def add_audio_to_video(video_path, audio_path, output_path, audio_offset=0.0):
     # Validate audio_offset to prevent command injection
     try:
         audio_offset = float(audio_offset)
-    except (ValueError, TypeError):
+        # Additional validation: ensure reasonable range
+        if not (-3600 <= audio_offset <= 3600):  # Max 1 hour offset
+            raise ValueError("Audio offset must be between -3600 and 3600 seconds")
+    except (ValueError, TypeError) as e:
         raise ValueError(f"Invalid audio_offset: must be a number, got {audio_offset}")
     
     # Build ffmpeg command
@@ -72,8 +75,10 @@ def add_audio_to_video(video_path, audio_path, output_path, audio_offset=0.0):
     ]
     
     # Add audio offset if specified - MUST come before audio input
+    # Format as string with limited precision to prevent injection
     if audio_offset != 0:
-        cmd.extend(['-itsoffset', str(audio_offset), '-i', audio_path])
+        offset_str = f"{audio_offset:.3f}"  # Limit to 3 decimal places
+        cmd.extend(['-itsoffset', offset_str, '-i', audio_path])
     else:
         cmd.extend(['-i', audio_path])
     

@@ -44,9 +44,6 @@ class KarafunRenderer:
         self.inactive_color = (255, 255, 255, 255)  # White for inactive
         self.done_color = (237, 61, 234, 255)  # Magenta/pink for done words
         self.active_fill_color = (255, 255, 255, 255)  # White for active filling
-        
-        # Line state for alternating slide animation
-        self.current_line_slot = 0  # 0 or 1 (top or bottom)
     
     def render_frame(self, lines_data, text_layout, current_time, 
                      show_header=True, show_title=False,
@@ -373,8 +370,12 @@ class KarafunRenderer:
             line_y = title_y + title_height + 10
             line_start_x = (self.width - full_title_width) // 2
             
-            # Animate underline from left to right
-            underline_progress = min(1.0, (current_time - artist_delay + 0.5) * 2.0)
+            # Animate underline from left to right after title completes
+            # Constants for underline animation timing
+            UNDERLINE_START_DELAY = 0.5  # Wait 0.5s after title completes before starting
+            UNDERLINE_SPEED_MULTIPLIER = 2.0  # Speed at which underline progresses (2x = 0.5s duration)
+            
+            underline_progress = min(1.0, (current_time - artist_delay + UNDERLINE_START_DELAY) * UNDERLINE_SPEED_MULTIPLIER)
             line_end_x = line_start_x + int(full_title_width * underline_progress)
             
             if underline_progress > 0:
@@ -405,12 +406,10 @@ class KarafunRenderer:
         remaining_seconds = max(0, video_duration - current_time)
         
         # Check if we're in waiting state (before first line or between lines)
+        # Optimize by using any() which short-circuits on first match
         in_waiting = True
         if lines_data:
-            for line in lines_data:
-                if line['start_time'] <= current_time <= line['end_time']:
-                    in_waiting = False
-                    break
+            in_waiting = not any(line['start_time'] <= current_time <= line['end_time'] for line in lines_data)
         
         # Format time display
         minutes = int(remaining_seconds // 60)

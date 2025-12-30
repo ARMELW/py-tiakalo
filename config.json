@@ -1,0 +1,42 @@
+{
+  "video": { "width": 1280, "height": 720, "fps": 30 },
+  "background": { "color": [10, 10, 30], "image": "bg.jpg" },
+  "title": {
+    "song": "Ny Fanahiko",
+    "artist": "Ndriana Ramamonjy",
+    "duration": 4.0
+  },
+  "font": {
+    "family": "./Shantell.ttf",
+    "size": 52,
+    "style": "bold"
+  },
+  "animation": { "show_header": true, "typewriter_speed": 0.05 },
+  "display": { "show_time": true },
+  "lyrics": [
+    { "text": "Ny fanahiko miantso Anao", "start_time": 0, "end_time": 3 },
+    { "text": "Ao anatin’ny haizina sy hazavana", "start_time": 3, "end_time": 6 },
+    { "text": "Ianao no hery sy fiainako", "start_time": 6, "end_time": 9 },
+    { "text": "Tsy misy toa Anao", "start_time": 9, "end_time": 12 },
+
+    { "text": "Rehefa reraka ny diako", "start_time": 12, "end_time": 15 },
+    { "text": "Dia Ianao no fitsaharako", "start_time": 15, "end_time": 18 },
+    { "text": "Ny tananao no mitantana ahy", "start_time": 18, "end_time": 21 },
+    { "text": "Mandrakizay tsy miova", "start_time": 21, "end_time": 24 },
+
+    { "text": "Manandratra feo aho", "start_time": 24, "end_time": 27 },
+    { "text": "Midera Anao Tompo ô", "start_time": 27, "end_time": 30 },
+    { "text": "Fa lehibe ny fitiavanao", "start_time": 30, "end_time": 33 },
+    { "text": "Mihoatra noho ny nofinofiko", "start_time": 33, "end_time": 36 },
+
+    { "text": "Na rivotra na tafio-drivotra", "start_time": 36, "end_time": 39 },
+    { "text": "Tsy hahasaraka ahy Aminao", "start_time": 39, "end_time": 42 },
+    { "text": "Ny fanahiko mifikitra Aminao", "start_time": 42, "end_time": 45 },
+    { "text": "Ianao no lalan’ny fiainana", "start_time": 45, "end_time": 48 },
+
+    { "text": "Miverimberina ny fiderako", "start_time": 48, "end_time": 51 },
+    { "text": "Mitsangana aho hidera Anao", "start_time": 51, "end_time": 54 },
+    { "text": "Ny foko sy ny saiko iray", "start_time": 54, "end_time": 57 },
+    { "text": "Ho Anao irery ihany", "start_time": 57, "end_time": 60 }
+  ]
+}

@@ -6,6 +6,14 @@
 
 This project implements a karaoke word fill effect in Python, porting the functionality from React + SVG to Python + OpenCV. It generates MP4 videos with synchronized lyrics that fill progressively from left to right as each word becomes active.
 
+## 🎬 Preview
+
+**Karafun-Style Karaoke in Action:**
+
+![Karafun Karaoke Screenshot](https://github.com/user-attachments/assets/c6fbebec-44c4-4894-ae1f-7eefdfeec2f4)
+
+*Two-line display with white text turning magenta as words are sung, professional header, and centered layout.*
+
 ## ✨ Features
 
 - ✅ Word-by-word text splitting

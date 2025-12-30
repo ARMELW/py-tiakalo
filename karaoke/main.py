@@ -1,0 +1,244 @@
+"""
+Main module for generating karaoke videos.
+"""
+
+import cv2
+import numpy as np
+from .renderer import KaraokeRenderer
+from .text_layout import TextLayout
+from .timing import create_word_timings
+
+
+def generate_karaoke_video(
+    lyrics_data,
+    output_path='karaoke_output.mp4',
+    width=1280,
+    height=720,
+    fps=30,
+    font_family='Arial',
+    font_size=48,
+    style='',
+    active_color=(255, 69, 0),
+    inactive_color=(136, 136, 136),
+    bg_color=(0, 0, 0)
+):
+    """
+    Generate a karaoke video from lyrics data.
+    
+    Args:
+        lyrics_data: List of dictionaries with 'text', 'start_time', 'end_time'
+                    Example: [
+                        {'text': 'Hello world', 'start_time': 0, 'end_time': 2},
+                        {'text': 'This is karaoke', 'start_time': 2, 'end_time': 4}
+                    ]
+        output_path: Path to output MP4 file
+        width: Video width in pixels
+        height: Video height in pixels
+        fps: Frames per second
+        font_family: Font family name or TTF file path
+        font_size: Font size in pixels
+        style: Text style string (e.g., 'bold italic')
+        active_color: RGB color tuple for active/passed text
+        inactive_color: RGB color tuple for inactive text
+        bg_color: RGB color tuple for background
+    
+    Returns:
+        Path to the generated video file
+    """
+    # Initialize components
+    renderer = KaraokeRenderer(
+        width=width,
+        height=height,
+        bg_color=bg_color + (255,)  # Add alpha channel
+    )
+    
+    text_layout = TextLayout(
+        font_family=font_family,
+        font_size=font_size,
+        style=style
+    )
+    
+    # Convert colors to RGBA
+    active_color = active_color + (255,)
+    inactive_color = inactive_color + (255,)
+    
+    # Process all lyrics to create word timings
+    all_word_timings = []
+    all_word_sizes = []
+    
+    for lyric in lyrics_data:
+        text = lyric['text']
+        start_time = lyric['start_time']
+        end_time = lyric['end_time']
+        
+        # Create word timings
+        word_timings = create_word_timings(text, start_time, end_time)
+        
+        # Measure words
+        words = [wt.text for wt in word_timings]
+        word_sizes = text_layout.measure_words(words)
+        
+        all_word_timings.extend(word_timings)
+        all_word_sizes.extend(word_sizes)
+    
+    # Calculate video duration
+    if not all_word_timings:
+        raise ValueError("No lyrics data provided")
+    
+    video_duration = max(wt.end_time for wt in all_word_timings)
+    total_frames = int(video_duration * fps)
+    
+    # Initialize video writer
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    
+    # Generate frames
+    for frame_idx in range(total_frames):
+        current_time = frame_idx / fps
+        
+        # Render frame
+        frame = renderer.render_frame(
+            word_timings=all_word_timings,
+            word_sizes=all_word_sizes,
+            text_layout=text_layout,
+            current_time=current_time,
+            active_color=active_color,
+            inactive_color=inactive_color
+        )
+        
+        # Write frame
+        out.write(frame)
+    
+    # Release video writer
+    out.release()
+    
+    return output_path
+
+
+def generate_karaoke_video_with_lines(
+    lyrics_data,
+    output_path='karaoke_output.mp4',
+    width=1280,
+    height=720,
+    fps=30,
+    font_family='Arial',
+    font_size=48,
+    style='',
+    active_color=(255, 69, 0),
+    inactive_color=(136, 136, 136),
+    bg_color=(0, 0, 0),
+    line_spacing=20
+):
+    """
+    Generate a karaoke video with multiple lines displayed.
+    
+    Args:
+        lyrics_data: List of dictionaries with 'text', 'start_time', 'end_time'
+        output_path: Path to output MP4 file
+        width: Video width in pixels
+        height: Video height in pixels
+        fps: Frames per second
+        font_family: Font family name or TTF file path
+        font_size: Font size in pixels
+        style: Text style string
+        active_color: RGB color tuple for active/passed text
+        inactive_color: RGB color tuple for inactive text
+        bg_color: RGB color tuple for background
+        line_spacing: Spacing between lines in pixels
+    
+    Returns:
+        Path to the generated video file
+    """
+    # Initialize components
+    renderer = KaraokeRenderer(
+        width=width,
+        height=height,
+        bg_color=bg_color + (255,)
+    )
+    
+    text_layout = TextLayout(
+        font_family=font_family,
+        font_size=font_size,
+        style=style
+    )
+    
+    # Convert colors to RGBA
+    active_color = active_color + (255,)
+    inactive_color = inactive_color + (255,)
+    
+    # Process lyrics line by line
+    lines_data = []
+    for lyric in lyrics_data:
+        text = lyric['text']
+        start_time = lyric['start_time']
+        end_time = lyric['end_time']
+        
+        word_timings = create_word_timings(text, start_time, end_time)
+        words = [wt.text for wt in word_timings]
+        word_sizes = text_layout.measure_words(words)
+        
+        lines_data.append({
+            'word_timings': word_timings,
+            'word_sizes': word_sizes,
+            'start_time': start_time,
+            'end_time': end_time
+        })
+    
+    # Calculate video duration
+    if not lines_data:
+        raise ValueError("No lyrics data provided")
+    
+    video_duration = max(line['end_time'] for line in lines_data)
+    total_frames = int(video_duration * fps)
+    
+    # Initialize video writer
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    
+    # Generate frames
+    for frame_idx in range(total_frames):
+        current_time = frame_idx / fps
+        
+        # Create frame with background
+        frame = np.full((height, width, 3), bg_color, dtype=np.uint8)
+        
+        # Find active and nearby lines
+        active_lines = []
+        for line_data in lines_data:
+            if line_data['start_time'] <= current_time <= line_data['end_time'] + 1:
+                active_lines.append(line_data)
+        
+        # Calculate Y positions for lines
+        if active_lines:
+            total_height = sum(max(w['height'] for w in line['word_sizes']) 
+                             for line in active_lines)
+            total_height += line_spacing * (len(active_lines) - 1)
+            
+            start_y = (height - total_height) / 2
+            current_y = start_y
+            
+            # Render each line
+            for line_data in active_lines:
+                line_height = max(w['height'] for w in line_data['word_sizes'])
+                
+                line_frame = renderer.render_frame(
+                    word_timings=line_data['word_timings'],
+                    word_sizes=line_data['word_sizes'],
+                    text_layout=text_layout,
+                    current_time=current_time,
+                    active_color=active_color,
+                    inactive_color=inactive_color,
+                    y_position=current_y
+                )
+                
+                # Composite line onto frame (simple overlay since backgrounds match)
+                frame = line_frame
+                current_y += line_height + line_spacing
+        
+        # Write frame
+        out.write(frame)
+    
+    # Release video writer
+    out.release()
+    
+    return output_path

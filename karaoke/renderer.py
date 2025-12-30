@@ -53,16 +53,6 @@ class KaraokeRenderer:
         if y_position is None:
             y_position = (self.height - max_height) / 2
         
-        # Calculate progress width for fill effect
-        total_progress_time = 0
-        for timing in word_timings:
-            status = timing.get_status(current_time)
-            if status == 'passed':
-                total_progress_time += 1
-            elif status == 'active':
-                progress = timing.get_progress(current_time)
-                total_progress_time += progress / 100
-        
         # Draw each word
         for i, (timing, word_info) in enumerate(zip(word_timings, word_sizes)):
             word_text = word_info['text']

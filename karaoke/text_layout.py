@@ -33,7 +33,7 @@ class TextLayout:
         if os.path.exists(self.font_family):
             try:
                 return ImageFont.truetype(self.font_family, self.font_size)
-            except:
+            except (OSError, IOError):
                 pass
         
         # Try common font paths
@@ -59,7 +59,7 @@ class TextLayout:
             if os.path.exists(font_path):
                 try:
                     return ImageFont.truetype(font_path, self.font_size)
-                except:
+                except (OSError, IOError):
                     continue
         
         # Fallback to default font

@@ -210,6 +210,8 @@ def generate_karaoke_video_with_lines(
         
         # Calculate Y positions for lines
         if active_lines:
+            from PIL import Image as PILImage
+            
             total_height = sum(max(w['height'] for w in line['word_sizes']) 
                              for line in active_lines)
             total_height += line_spacing * (len(active_lines) - 1)
@@ -217,10 +219,14 @@ def generate_karaoke_video_with_lines(
             start_y = (height - total_height) / 2
             current_y = start_y
             
+            # Start with base background frame
+            frame = np.full((height, width, 3), bg_color, dtype=np.uint8)
+            
             # Render each line
-            for line_data in active_lines:
+            for idx, line_data in enumerate(active_lines):
                 line_height = max(w['height'] for w in line_data['word_sizes'])
                 
+                # Render line frame
                 line_frame = renderer.render_frame(
                     word_timings=line_data['word_timings'],
                     word_sizes=line_data['word_sizes'],
@@ -231,8 +237,14 @@ def generate_karaoke_video_with_lines(
                     y_position=current_y
                 )
                 
-                # Composite line onto frame (simple overlay since backgrounds match)
-                frame = line_frame
+                # For all lines, overlay non-background pixels
+                # Create a mask for non-background pixels
+                bg_array = np.array(bg_color, dtype=np.uint8)
+                mask = np.any(line_frame != bg_array, axis=2)
+                
+                # Copy non-background pixels to frame
+                frame[mask] = line_frame[mask]
+                
                 current_y += line_height + line_spacing
         
         # Write frame

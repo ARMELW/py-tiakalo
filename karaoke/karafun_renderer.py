@@ -260,10 +260,8 @@ class KarafunRenderer:
         """
         draw = ImageDraw.Draw(img)
         
-        # Header background with transparency
+        # Header background - fully transparent (no black bar)
         header_height = 80
-        header_rect = Image.new('RGBA', (self.width, header_height), (0, 0, 0, 51))  # 20% opacity
-        img.paste(header_rect, (0, 0), header_rect)
         
         # Draw decorative top line
         draw.line([(0, 0), (self.width, 0)], fill=(237, 61, 234, 255), width=2)

@@ -347,8 +347,17 @@ def generate_karafun_video(
     if not lines_data:
         raise ValueError("No lyrics data provided")
     
-    # Add title screen duration if enabled
-    time_offset = title_duration if title_duration > 0 and song_title else 0
+    # Check if first lyric starts too early (before minimum title duration threshold)
+    # Skip title screen if first lyric starts before we can reasonably show title
+    first_lyric_start = lines_data[0]['start_time']
+    MIN_TITLE_THRESHOLD = 2.0  # Need at least 2 seconds to show title properly
+    
+    # Determine if we should skip title screen
+    skip_title = (title_duration > 0 and song_title and 
+                  first_lyric_start < MIN_TITLE_THRESHOLD)
+    
+    # Add title screen duration if enabled and not skipped
+    time_offset = title_duration if (title_duration > 0 and song_title and not skip_title) else 0
     video_duration = max(line['end_time'] for line in lines_data) + time_offset
     total_frames = int(video_duration * fps)
     

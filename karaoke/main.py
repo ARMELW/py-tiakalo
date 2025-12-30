@@ -5,6 +5,7 @@ Main module for generating karaoke videos.
 import cv2
 import numpy as np
 from .renderer import KaraokeRenderer
+from .karafun_renderer import KarafunRenderer
 from .text_layout import TextLayout
 from .timing import create_word_timings
 
@@ -246,6 +247,125 @@ def generate_karaoke_video_with_lines(
                 frame[mask] = line_frame[mask]
                 
                 current_y += line_height + line_spacing
+        
+        # Write frame
+        out.write(frame)
+    
+    # Release video writer
+    out.release()
+    
+    return output_path
+
+
+def generate_karafun_video(
+    lyrics_data,
+    output_path='karafun_output.mp4',
+    width=1280,
+    height=720,
+    fps=30,
+    font_family='Arial',
+    font_size=48,
+    style='bold',
+    bg_color=(0, 0, 0),
+    show_header=True,
+    title_duration=3.0,
+    song_title=None,
+    artist_name=None
+):
+    """
+    Generate a Karafun-style karaoke video with two-line display.
+    
+    Features:
+    - Two lines displayed (current + next)
+    - White color for inactive words
+    - Magenta/pink (237, 61, 234) for passed words
+    - Progressive fill for active words
+    - Optional header with site name and status
+    - Optional title screen at the start
+    
+    Args:
+        lyrics_data: List of dictionaries with 'text', 'start_time', 'end_time'
+        output_path: Path to output MP4 file
+        width: Video width in pixels
+        height: Video height in pixels
+        fps: Frames per second
+        font_family: Font family name or TTF file path
+        font_size: Font size in pixels (Karafun uses large, bold fonts)
+        style: Text style string (default: 'bold')
+        bg_color: RGB color tuple for background
+        show_header: Whether to show header with site name and status
+        title_duration: Duration of title screen in seconds (0 to disable)
+        song_title: Song title for title screen
+        artist_name: Artist name for title screen
+    
+    Returns:
+        Path to the generated video file
+    """
+    # Initialize components
+    renderer = KarafunRenderer(
+        width=width,
+        height=height,
+        bg_color=bg_color + (255,)
+    )
+    
+    text_layout = TextLayout(
+        font_family=font_family,
+        font_size=font_size,
+        style=style
+    )
+    
+    # Process lyrics line by line
+    lines_data = []
+    for lyric in lyrics_data:
+        text = lyric['text']
+        start_time = lyric['start_time']
+        end_time = lyric['end_time']
+        
+        word_timings = create_word_timings(text, start_time, end_time)
+        words = [wt.text for wt in word_timings]
+        word_sizes = text_layout.measure_words(words)
+        
+        lines_data.append({
+            'word_timings': word_timings,
+            'word_sizes': word_sizes,
+            'start_time': start_time,
+            'end_time': end_time,
+            'text': text
+        })
+    
+    # Calculate video duration
+    if not lines_data:
+        raise ValueError("No lyrics data provided")
+    
+    # Add title screen duration if enabled
+    time_offset = title_duration if title_duration > 0 and song_title else 0
+    video_duration = max(line['end_time'] for line in lines_data) + time_offset
+    total_frames = int(video_duration * fps)
+    
+    # Initialize video writer
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    
+    # Generate frames
+    for frame_idx in range(total_frames):
+        current_time = frame_idx / fps
+        
+        # Adjust time for title screen offset
+        lyrics_time = current_time - time_offset if time_offset > 0 else current_time
+        
+        # Determine if we should show title screen
+        show_title = time_offset > 0 and current_time < time_offset
+        
+        # Render frame
+        frame = renderer.render_frame(
+            lines_data=lines_data,
+            text_layout=text_layout,
+            current_time=lyrics_time,
+            show_header=show_header and not show_title,
+            show_title=show_title,
+            song_title=song_title,
+            artist_name=artist_name
+        )
         
         # Write frame
         out.write(frame)

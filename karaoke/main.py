@@ -273,7 +273,9 @@ def generate_karafun_video(
     artist_name=None,
     bg_image=None,
     show_time=False,
-    typewriter_speed=0.05
+    typewriter_speed=0.05,
+    audio_path=None,
+    audio_offset=0.0
 ):
     """
     Generate a Karafun-style karaoke video with two-line display.
@@ -288,6 +290,7 @@ def generate_karafun_video(
     - Optional background image
     - Optional time display
     - Typewriter animation for title screen
+    - Optional audio track
     
     Args:
         lyrics_data: List of dictionaries with 'text', 'start_time', 'end_time'
@@ -306,6 +309,8 @@ def generate_karafun_video(
         bg_image: Path to background image file (optional)
         show_time: Whether to show time remaining display
         typewriter_speed: Speed of typewriter animation (seconds per character)
+        audio_path: Path to audio file to add to video (optional)
+        audio_offset: Offset in seconds to delay/advance audio (default: 0.0)
     
     Returns:
         Path to the generated video file
@@ -399,5 +404,25 @@ def generate_karafun_video(
     
     # Release video writer
     out.release()
+    
+    # Add audio if provided
+    if audio_path:
+        from .utils import add_audio_to_video
+        import os
+        
+        # Create temporary path for video without audio
+        temp_video = output_path.replace('.mp4', '_temp.mp4')
+        os.rename(output_path, temp_video)
+        
+        try:
+            # Merge audio with video
+            add_audio_to_video(temp_video, audio_path, output_path, audio_offset)
+            # Remove temporary file
+            os.remove(temp_video)
+        except Exception as e:
+            # Restore original video if audio merge fails
+            if os.path.exists(temp_video):
+                os.rename(temp_video, output_path)
+            print(f"Warning: Could not add audio: {e}")
     
     return output_path

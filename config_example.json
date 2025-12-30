@@ -26,6 +26,10 @@
   "display": {
     "show_time": true
   },
+  "audio": {
+    "path": null,
+    "offset": 0.0
+  },
   "lyrics": [
     {
       "text": "Welcome to the Karafun style karaoke",

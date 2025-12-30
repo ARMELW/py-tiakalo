@@ -83,6 +83,17 @@ def create_config_with_audio():
 
 def generate_from_code():
     """Generate video directly from Python code with all features."""
+    import os
+    
+    # Check if required files exist
+    bg_image = 'bg.jpg' if os.path.exists('bg.jpg') else None
+    audio_file = 'test_audio.mp3' if os.path.exists('test_audio.mp3') else None
+    
+    if not bg_image:
+        print("Warning: bg.jpg not found, using solid color background")
+    if not audio_file:
+        print("Warning: test_audio.mp3 not found, generating video without audio")
+    
     lyrics_data = [
         {
             'text': 'All features demonstrated here',
@@ -118,18 +129,18 @@ def generate_from_code():
         width=1280,
         height=720,
         fps=30,
-        font_family='./Shantell.ttf',
+        font_family='./Shantell.ttf' if os.path.exists('./Shantell.ttf') else 'Arial',
         font_size=52,
         style='bold',
         bg_color=(10, 10, 30),
-        bg_image='bg.jpg',
+        bg_image=bg_image,
         show_header=True,
         show_time=True,
         title_duration=2.5,
         song_title='Python API Demo',
         artist_name='tiakalo.org',
         typewriter_speed=0.05,
-        audio_path='test_audio.mp3',
+        audio_path=audio_file,
         audio_offset=0.0
     )
     print(f"✓ Video generated: {output_path}")

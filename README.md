@@ -306,7 +306,6 @@ Generate a professional Karafun-style karaoke video with two-line display.
 - `typewriter_speed` (float): Speed of typewriter animation in seconds per character (default: 0.05, **NEW**)
 - `audio_path` (str): Path to audio file to add to video (optional, **NEW**)
 - `audio_offset` (float): Audio offset in seconds - positive delays audio, negative advances it (default: 0.0, **NEW**)
-- `typewriter_speed` (float): Speed of typewriter animation in seconds per character (default: 0.05, **NEW**)
 
 **Returns:** Path to the generated video file
 

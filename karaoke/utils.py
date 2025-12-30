@@ -4,11 +4,22 @@ Utility functions for karaoke effect.
 
 import subprocess
 import os
+import shutil
 
 
 # Constants
 DEFAULT_OVERLAY_OPACITY = 128  # 50% opacity (0-255 scale)
 MIN_TITLE_THRESHOLD = 2.0  # Minimum seconds needed to show title
+
+
+def check_ffmpeg_available():
+    """
+    Check if ffmpeg is available in the system PATH.
+    
+    Returns:
+        bool: True if ffmpeg is available, False otherwise
+    """
+    return shutil.which('ffmpeg') is not None
 
 
 def add_audio_to_video(video_path, audio_path, output_path, audio_offset=0.0):
@@ -25,10 +36,17 @@ def add_audio_to_video(video_path, audio_path, output_path, audio_offset=0.0):
         Path to output video file
         
     Raises:
-        RuntimeError: If ffmpeg command fails
+        RuntimeError: If ffmpeg command fails or ffmpeg is not available
         FileNotFoundError: If input files don't exist
         ValueError: If audio_offset is not a valid number
     """
+    # Check if ffmpeg is available
+    if not check_ffmpeg_available():
+        raise RuntimeError(
+            "ffmpeg is not available in the system PATH. "
+            "Please install ffmpeg: https://ffmpeg.org/download.html"
+        )
+    
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Video file not found: {video_path}")
     if not os.path.exists(audio_path):

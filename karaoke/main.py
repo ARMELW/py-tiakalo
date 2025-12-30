@@ -421,7 +421,7 @@ def generate_karafun_video(
             add_audio_to_video(str(temp_video), audio_path, output_path, audio_offset)
             # Remove temporary file
             os.remove(temp_video)
-        except Exception as e:
+        except (RuntimeError, FileNotFoundError, ValueError) as e:
             # Restore original video if audio merge fails
             if os.path.exists(temp_video):
                 os.rename(temp_video, output_path)

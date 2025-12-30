@@ -77,7 +77,8 @@ class KarafunRenderer:
         if self.bg_image:
             img = self.bg_image.copy()
             # Add dark overlay to improve text visibility on bright backgrounds
-            overlay = Image.new('RGBA', (self.width, self.height), (0, 0, 0, 128))  # 50% opacity
+            from .utils import DEFAULT_OVERLAY_OPACITY
+            overlay = Image.new('RGBA', (self.width, self.height), (0, 0, 0, DEFAULT_OVERLAY_OPACITY))
             img = Image.alpha_composite(img, overlay)
         else:
             img = Image.new('RGBA', (self.width, self.height), self.bg_color)

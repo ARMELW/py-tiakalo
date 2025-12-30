@@ -6,6 +6,11 @@ import subprocess
 import os
 
 
+# Constants
+DEFAULT_OVERLAY_OPACITY = 128  # 50% opacity (0-255 scale)
+MIN_TITLE_THRESHOLD = 2.0  # Minimum seconds needed to show title
+
+
 def add_audio_to_video(video_path, audio_path, output_path, audio_offset=0.0):
     """
     Add audio track to video using ffmpeg.
@@ -22,16 +27,23 @@ def add_audio_to_video(video_path, audio_path, output_path, audio_offset=0.0):
     Raises:
         RuntimeError: If ffmpeg command fails
         FileNotFoundError: If input files don't exist
+        ValueError: If audio_offset is not a valid number
     """
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Video file not found: {video_path}")
     if not os.path.exists(audio_path):
         raise FileNotFoundError(f"Audio file not found: {audio_path}")
     
+    # Validate audio_offset to prevent command injection
+    try:
+        audio_offset = float(audio_offset)
+    except (ValueError, TypeError):
+        raise ValueError(f"Invalid audio_offset: must be a number, got {audio_offset}")
+    
     # Build ffmpeg command
     # -y: overwrite output file
     # -i: input files
-    # -itsoffset: offset audio
+    # -itsoffset: offset audio (must come BEFORE the audio input it affects)
     # -c:v copy: copy video codec without re-encoding
     # -c:a aac: encode audio as AAC
     # -shortest: finish when shortest stream ends
@@ -41,12 +53,13 @@ def add_audio_to_video(video_path, audio_path, output_path, audio_offset=0.0):
         '-i', video_path,  # Video input
     ]
     
-    # Add audio offset if specified
+    # Add audio offset if specified - MUST come before audio input
     if audio_offset != 0:
-        cmd.extend(['-itsoffset', str(audio_offset)])
+        cmd.extend(['-itsoffset', str(audio_offset), '-i', audio_path])
+    else:
+        cmd.extend(['-i', audio_path])
     
     cmd.extend([
-        '-i', audio_path,  # Audio input
         '-c:v', 'copy',  # Copy video stream
         '-c:a', 'aac',  # Encode audio as AAC
         '-shortest',  # End when shortest stream ends

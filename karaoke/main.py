@@ -354,8 +354,8 @@ def generate_karafun_video(
     
     # Check if first lyric starts too early (before minimum title duration threshold)
     # Skip title screen if first lyric starts before we can reasonably show title
+    from .utils import MIN_TITLE_THRESHOLD
     first_lyric_start = lines_data[0]['start_time']
-    MIN_TITLE_THRESHOLD = 2.0  # Need at least 2 seconds to show title properly
     
     # Determine if we should skip title screen
     skip_title = (title_duration > 0 and song_title and 
@@ -409,14 +409,16 @@ def generate_karafun_video(
     if audio_path:
         from .utils import add_audio_to_video
         import os
+        from pathlib import Path
         
-        # Create temporary path for video without audio
-        temp_video = output_path.replace('.mp4', '_temp.mp4')
+        # Create temporary path for video without audio using proper path manipulation
+        output_file = Path(output_path)
+        temp_video = output_file.with_stem(f"{output_file.stem}_temp")
         os.rename(output_path, temp_video)
         
         try:
             # Merge audio with video
-            add_audio_to_video(temp_video, audio_path, output_path, audio_offset)
+            add_audio_to_video(str(temp_video), audio_path, output_path, audio_offset)
             # Remove temporary file
             os.remove(temp_video)
         except Exception as e:

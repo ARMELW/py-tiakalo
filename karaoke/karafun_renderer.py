@@ -5,12 +5,13 @@ Karafun-style karaoke renderer with two-line display and animations.
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 from .utils import map_in_range
+from pathlib import Path
 
 
 class KarafunRenderer:
     """Renders Karafun-style karaoke effect with two lines displayed."""
     
-    def __init__(self, width=1280, height=720, bg_color=(0, 0, 0, 255)):
+    def __init__(self, width=1280, height=720, bg_color=(0, 0, 0, 255), bg_image=None):
         """
         Initialize Karafun renderer.
         
@@ -18,10 +19,32 @@ class KarafunRenderer:
             width: Frame width in pixels
             height: Frame height in pixels
             bg_color: Background color as RGBA tuple
+            bg_image: Path to background image (optional)
         """
         self.width = width
         self.height = height
         self.bg_color = bg_color
+        
+        # Load background image if provided
+        self.bg_image = None
+        if bg_image and Path(bg_image).exists():
+            try:
+                self.bg_image = Image.open(bg_image).convert('RGBA')
+                # Resize to match video dimensions with high-quality resampling
+                # Try new API first, fall back to old API for compatibility
+                try:
+                    resample_method = Image.Resampling.LANCZOS
+                except AttributeError:
+                    try:
+                        # Fallback for older Pillow versions (< 9.1.0)
+                        resample_method = Image.LANCZOS
+                    except AttributeError:
+                        # Ultimate fallback to BICUBIC if LANCZOS unavailable
+                        resample_method = Image.BICUBIC
+                self.bg_image = self.bg_image.resize((width, height), resample_method)
+            except Exception as e:
+                print(f"Warning: Could not load background image: {e}")
+                self.bg_image = None
         
         # Karafun color scheme
         self.inactive_color = (255, 255, 255, 255)  # White for inactive
@@ -30,7 +53,8 @@ class KarafunRenderer:
     
     def render_frame(self, lines_data, text_layout, current_time, 
                      show_header=True, show_title=False,
-                     song_title=None, artist_name=None):
+                     song_title=None, artist_name=None, show_time=False,
+                     typewriter_speed=0.05, video_duration=None):
         """
         Render a single frame with Karafun style (two lines).
         
@@ -42,22 +66,32 @@ class KarafunRenderer:
             show_title: Whether to show title screen
             song_title: Song title for title screen
             artist_name: Artist name for title screen
+            show_time: Whether to show time display
+            typewriter_speed: Speed of typewriter animation (seconds per character)
+            video_duration: Total video duration for time remaining calculation
         
         Returns:
             NumPy array representing the frame (H x W x 3 in BGR format for OpenCV)
         """
         # Create PIL image with background
-        img = Image.new('RGBA', (self.width, self.height), self.bg_color)
+        if self.bg_image:
+            img = self.bg_image.copy()
+        else:
+            img = Image.new('RGBA', (self.width, self.height), self.bg_color)
         
         if show_title and song_title:
-            # Show title screen
-            self._render_title_screen(img, song_title, artist_name, text_layout)
+            # Show title screen with typewriter animation
+            self._render_title_screen(img, song_title, artist_name, text_layout, current_time, typewriter_speed)
         else:
             # Show header if enabled
             if show_header:
                 self._render_header(img, text_layout)
             
-            # Find the current and next line
+            # Show time display if enabled
+            if show_time and video_duration:
+                self._render_time_display(img, text_layout, current_time, video_duration, lines_data)
+            
+            # Find the current and next line using alternating sliding logic
             current_line = None
             next_line = None
             
@@ -238,8 +272,12 @@ class KarafunRenderer:
         site_name = "tiakalo.org"
         font_size = 32
         try:
-            header_font = ImageFont.truetype(text_layout.font.path, font_size)
-        except:
+            font_path = getattr(text_layout.font, 'path', None)
+            if font_path:
+                header_font = ImageFont.truetype(font_path, font_size)
+            else:
+                header_font = text_layout.font
+        except Exception:
             header_font = text_layout.font
         
         draw.text((30, 25), site_name, font=header_font, fill=(255, 255, 255, 255))
@@ -254,15 +292,17 @@ class KarafunRenderer:
         
         draw.text((status_x + 15, 25), status_text, font=header_font, fill=(255, 255, 255, 255))
     
-    def _render_title_screen(self, img, title, artist, text_layout):
+    def _render_title_screen(self, img, title, artist, text_layout, current_time, typewriter_speed=0.05):
         """
-        Render title screen with song title and artist name.
+        Render title screen with song title and artist name using typewriter animation.
         
         Args:
             img: PIL Image to draw on
             title: Song title
             artist: Artist name
             text_layout: TextLayout object
+            current_time: Current time in seconds for animation
+            typewriter_speed: Speed of typewriter effect (seconds per character)
         """
         draw = ImageDraw.Draw(img)
         
@@ -271,25 +311,48 @@ class KarafunRenderer:
         artist_size = int(text_layout.font_size * 1.2)
         
         try:
-            title_font = ImageFont.truetype(text_layout.font.path, title_size)
-            artist_font = ImageFont.truetype(text_layout.font.path, artist_size)
-        except:
+            font_path = getattr(text_layout.font, 'path', None)
+            if font_path:
+                title_font = ImageFont.truetype(font_path, title_size)
+                artist_font = ImageFont.truetype(font_path, artist_size)
+            else:
+                title_font = text_layout.font
+                artist_font = text_layout.font
+        except Exception:
             title_font = text_layout.font
             artist_font = text_layout.font
         
+        # Calculate how many characters to display based on current time (typewriter effect)
+        chars_per_second = 1.0 / typewriter_speed if typewriter_speed > 0 else 20
+        title_chars_to_show = int(current_time * chars_per_second)
+        
+        # Display partial title with typewriter effect
+        title_display = title[:title_chars_to_show] if title_chars_to_show < len(title) else title
+        title_complete = title_chars_to_show >= len(title)
+        
+        # Start showing artist after title is complete
+        artist_delay = len(title) * typewriter_speed
+        artist_chars_to_show = int((current_time - artist_delay) * chars_per_second) if current_time > artist_delay else 0
+        
         # Measure text
-        title_bbox = draw.textbbox((0, 0), title, font=title_font)
+        title_bbox = draw.textbbox((0, 0), title_display, font=title_font)
         title_width = title_bbox[2] - title_bbox[0]
         title_height = title_bbox[3] - title_bbox[1]
         
-        if artist:
-            artist_text = f"> {artist} <"
+        # Full width for underline animation
+        full_title_bbox = draw.textbbox((0, 0), title, font=title_font)
+        full_title_width = full_title_bbox[2] - full_title_bbox[0]
+        
+        if artist and artist_chars_to_show > 0:
+            artist_display = artist[:artist_chars_to_show] if artist_chars_to_show < len(artist) else artist
+            artist_text = f"> {artist_display} <"
             artist_bbox = draw.textbbox((0, 0), artist_text, font=artist_font)
             artist_width = artist_bbox[2] - artist_bbox[0]
             artist_height = artist_bbox[3] - artist_bbox[1]
         else:
             artist_width = 0
             artist_height = 0
+            artist_display = None
         
         # Calculate positions (centered)
         center_y = self.height // 2
@@ -302,24 +365,96 @@ class KarafunRenderer:
         # Glow effect (draw multiple times with offset)
         glow_color = (237, 61, 234, 100)
         for offset in [(-2, -2), (2, -2), (-2, 2), (2, 2)]:
-            draw.text((title_x + offset[0], title_y + offset[1]), title, 
+            draw.text((title_x + offset[0], title_y + offset[1]), title_display, 
                      font=title_font, fill=glow_color)
         
         # Main title text
-        draw.text((title_x, title_y), title, font=title_font, fill=(255, 255, 255, 255))
+        draw.text((title_x, title_y), title_display, font=title_font, fill=(255, 255, 255, 255))
         
-        # Draw decorative line under title
-        line_y = title_y + title_height + 10
-        line_start_x = (self.width - title_width) // 2
-        line_end_x = line_start_x + title_width
-        draw.line([(line_start_x, line_y), (line_end_x, line_y)], 
-                 fill=(237, 61, 234, 255), width=3)
+        # Draw decorative animated underline under title (progressive from left to right)
+        if title_complete:
+            line_y = title_y + title_height + 10
+            line_start_x = (self.width - full_title_width) // 2
+            
+            # Animate underline from left to right after title completes
+            # Constants for underline animation timing
+            UNDERLINE_START_DELAY = 0.5  # Wait 0.5s after title completes before starting
+            UNDERLINE_SPEED_MULTIPLIER = 2.0  # Speed at which underline progresses (2x = 0.5s duration)
+            
+            underline_progress = min(1.0, (current_time - artist_delay + UNDERLINE_START_DELAY) * UNDERLINE_SPEED_MULTIPLIER)
+            line_end_x = line_start_x + int(full_title_width * underline_progress)
+            
+            if underline_progress > 0:
+                draw.line([(line_start_x, line_y), (line_end_x, line_y)], 
+                         fill=(237, 61, 234, 255), width=3)
         
-        # Draw artist name if provided
-        if artist:
+        # Draw artist name if provided and visible
+        if artist and artist_display:
+            artist_text = f"> {artist_display} <"
             artist_x = (self.width - artist_width) // 2
             draw.text((artist_x, artist_y), artist_text, 
                      font=artist_font, fill=(200, 200, 200, 255))
+    
+    def _render_time_display(self, img, text_layout, current_time, video_duration, lines_data):
+        """
+        Render time display showing remaining time.
+        
+        Args:
+            img: PIL Image to draw on
+            text_layout: TextLayout object
+            current_time: Current time in seconds
+            video_duration: Total video duration in seconds
+            lines_data: List of line data (to determine if we're in waiting state)
+        """
+        draw = ImageDraw.Draw(img)
+        
+        # Calculate remaining time
+        remaining_seconds = max(0, video_duration - current_time)
+        
+        # Check if we're in waiting state (before first line or between lines)
+        # Note: any() evaluates until first True is found, optimizing most common case
+        in_waiting = True
+        if lines_data:
+            in_waiting = not any(line['start_time'] <= current_time <= line['end_time'] for line in lines_data)
+        
+        # Format time display
+        minutes = int(remaining_seconds // 60)
+        seconds = int(remaining_seconds % 60)
+        
+        if in_waiting:
+            # Show long remaining format when waiting
+            time_text = f"Remaining: {minutes:02d}:{seconds:02d}"
+        else:
+            # Show short remaining format when singing
+            time_text = f"{minutes:02d}:{seconds:02d}"
+        
+        # Create font for time display
+        time_font_size = 24
+        try:
+            # Try to get font path, with fallback for fonts without path attribute
+            font_path = getattr(text_layout.font, 'path', None)
+            if font_path:
+                time_font = ImageFont.truetype(font_path, time_font_size)
+            else:
+                time_font = text_layout.font
+        except Exception:
+            time_font = text_layout.font
+        
+        # Measure text
+        time_bbox = draw.textbbox((0, 0), time_text, font=time_font)
+        time_width = time_bbox[2] - time_bbox[0]
+        
+        # Position in bottom right corner
+        time_x = self.width - time_width - 30
+        time_y = self.height - 50
+        
+        # Draw time with semi-transparent background
+        bg_padding = 10
+        bg_rect = Image.new('RGBA', (time_width + bg_padding * 2, 35), (0, 0, 0, 128))
+        img.paste(bg_rect, (time_x - bg_padding, time_y - 5), bg_rect)
+        
+        # Draw time text
+        draw.text((time_x, time_y), time_text, font=time_font, fill=(255, 255, 255, 255))
     
     def _draw_text(self, img, text, x, y, font, color):
         """

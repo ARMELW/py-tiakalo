@@ -28,6 +28,10 @@ This project implements a karaoke word fill effect in Python, porting the functi
 - ✅ **Karafun-style renderer** with two-line display
 - ✅ Title screen with song name and artist
 - ✅ Header with site branding and status
+- ✅ **NEW: Typewriter animation** for title screen with progressive underline
+- ✅ **NEW: Time remaining display** (shows remaining time during playback)
+- ✅ **NEW: Background image support** (use custom images as backgrounds)
+- ✅ **NEW: CLI with JSON config** (generate videos from configuration files)
 
 ## 🚀 Installation
 
@@ -46,7 +50,7 @@ pip install -r requirements.txt
 
 ### Karafun Style (Recommended)
 
-The Karafun style provides a professional karaoke experience with two lines displayed simultaneously, magenta highlighting for sung words, and optional title screen.
+The Karafun style provides a professional karaoke experience with two lines displayed simultaneously, magenta highlighting for sung words, optional title screen with typewriter animation, time display, and background image support.
 
 ```python
 from karaoke import generate_karafun_video
@@ -73,11 +77,63 @@ generate_karafun_video(
     font_size=52,
     style='bold',
     bg_color=(10, 10, 30),  # Dark blue background
+    bg_image=None,  # Optional: Path to background image
     show_header=True,
+    show_time=True,  # Show time remaining display
     title_duration=3.0,
     song_title='My Karaoke Song',
-    artist_name='Artist Name'
+    artist_name='Artist Name',
+    typewriter_speed=0.05  # Typewriter animation speed
 )
+```
+
+### CLI Configuration (NEW)
+
+Generate videos using JSON configuration files:
+
+```bash
+# Generate video from config file
+python -m karaoke.cli --config config.json
+
+# Specify custom output path
+python -m karaoke.cli --config config.json --output my_video.mp4
+```
+
+**Example config.json:**
+```json
+{
+  "output_path": "karaoke_video.mp4",
+  "video": {
+    "width": 1280,
+    "height": 720,
+    "fps": 30
+  },
+  "background": {
+    "color": [10, 10, 30],
+    "image": null
+  },
+  "font": {
+    "family": "Arial",
+    "size": 52,
+    "style": "bold"
+  },
+  "title": {
+    "song": "Song Title",
+    "artist": "Artist Name",
+    "duration": 4.0
+  },
+  "animation": {
+    "show_header": true,
+    "typewriter_speed": 0.05
+  },
+  "display": {
+    "show_time": true
+  },
+  "lyrics": [
+    {"text": "First line", "start_time": 0, "end_time": 3},
+    {"text": "Second line", "start_time": 3, "end_time": 6}
+  ]
+}
 ```
 
 ### Basic Example
@@ -190,6 +246,9 @@ Generate a professional Karafun-style karaoke video with two-line display.
 - Progressive word-by-word fill effect
 - Optional header with site branding
 - Optional title screen with song info
+- **NEW:** Typewriter animation for title
+- **NEW:** Time remaining display
+- **NEW:** Background image support
 
 **Parameters:**
 - `lyrics_data` (list): List of dictionaries with 'text', 'start_time', 'end_time'
@@ -201,10 +260,13 @@ Generate a professional Karafun-style karaoke video with two-line display.
 - `font_size` (int): Font size in pixels (default: 48, recommend 48-60 for Karafun)
 - `style` (str): Text style string (default: 'bold')
 - `bg_color` (tuple): RGB color tuple for background (default: (0, 0, 0))
+- `bg_image` (str): Path to background image file (optional, **NEW**)
 - `show_header` (bool): Show header with branding (default: True)
+- `show_time` (bool): Show time remaining display (default: False, **NEW**)
 - `title_duration` (float): Duration of title screen in seconds (default: 3.0, 0 to disable)
 - `song_title` (str): Song title for title screen (optional)
 - `artist_name` (str): Artist name for title screen (optional)
+- `typewriter_speed` (float): Speed of typewriter animation in seconds per character (default: 0.05, **NEW**)
 
 **Returns:** Path to the generated video file
 

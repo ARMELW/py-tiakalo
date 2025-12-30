@@ -270,7 +270,10 @@ def generate_karafun_video(
     show_header=True,
     title_duration=3.0,
     song_title=None,
-    artist_name=None
+    artist_name=None,
+    bg_image=None,
+    show_time=False,
+    typewriter_speed=0.05
 ):
     """
     Generate a Karafun-style karaoke video with two-line display.
@@ -282,6 +285,9 @@ def generate_karafun_video(
     - Progressive fill for active words
     - Optional header with site name and status
     - Optional title screen at the start
+    - Optional background image
+    - Optional time display
+    - Typewriter animation for title screen
     
     Args:
         lyrics_data: List of dictionaries with 'text', 'start_time', 'end_time'
@@ -297,6 +303,9 @@ def generate_karafun_video(
         title_duration: Duration of title screen in seconds (0 to disable)
         song_title: Song title for title screen
         artist_name: Artist name for title screen
+        bg_image: Path to background image file (optional)
+        show_time: Whether to show time remaining display
+        typewriter_speed: Speed of typewriter animation (seconds per character)
     
     Returns:
         Path to the generated video file
@@ -305,7 +314,8 @@ def generate_karafun_video(
     renderer = KarafunRenderer(
         width=width,
         height=height,
-        bg_color=bg_color + (255,)
+        bg_color=bg_color + (255,),
+        bg_image=bg_image
     )
     
     text_layout = TextLayout(
@@ -360,11 +370,14 @@ def generate_karafun_video(
         frame = renderer.render_frame(
             lines_data=lines_data,
             text_layout=text_layout,
-            current_time=lyrics_time,
+            current_time=current_time if show_title else lyrics_time,
             show_header=show_header and not show_title,
             show_title=show_title,
             song_title=song_title,
-            artist_name=artist_name
+            artist_name=artist_name,
+            show_time=show_time and not show_title,
+            typewriter_speed=typewriter_speed,
+            video_duration=video_duration - time_offset
         )
         
         # Write frame

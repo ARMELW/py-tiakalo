@@ -30,12 +30,17 @@ class KarafunRenderer:
         if bg_image and Path(bg_image).exists():
             try:
                 self.bg_image = Image.open(bg_image).convert('RGBA')
-                # Resize to match video dimensions (use LANCZOS for quality, fallback to BICUBIC)
+                # Resize to match video dimensions with high-quality resampling
+                # Try new API first, fall back to old API for compatibility
                 try:
                     resample_method = Image.Resampling.LANCZOS
                 except AttributeError:
-                    # Fallback for older Pillow versions
-                    resample_method = Image.BICUBIC
+                    try:
+                        # Fallback for older Pillow versions (< 9.1.0)
+                        resample_method = Image.LANCZOS
+                    except AttributeError:
+                        # Ultimate fallback to BICUBIC if LANCZOS unavailable
+                        resample_method = Image.BICUBIC
                 self.bg_image = self.bg_image.resize((width, height), resample_method)
             except Exception as e:
                 print(f"Warning: Could not load background image: {e}")
